@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.manage.mapper.RoomsMapper">
+    
+    <resultMap type="Rooms" id="RoomsResult">
+        <result property="id"    column="id"    />
+        <result property="roomNumber"    column="room_number"    />
+        <result property="roomTypeId"    column="room_type_id"    />
+        <result property="status"    column="status"    />
+        <result property="createdTime"    column="created_time"    />
+        <result property="updatedTime"    column="updated_time"    />
+    </resultMap>
+
+    <sql id="selectRoomsVo">
+        select id, room_number, room_type_id, status, created_time, updated_time from rooms
+    </sql>
+
+    <select id="selectRoomsList" parameterType="Rooms" resultMap="RoomsResult">
+        <include refid="selectRoomsVo"/>
+        <where>  
+            <if test="roomNumber != null  and roomNumber != ''"> and room_number like concat('%', #{roomNumber}, '%')</if>
+            <if test="roomTypeId != null "> and room_type_id = #{roomTypeId}</if>
+            <if test="status != null "> and status = #{status}</if>
+        </where>
+    </select>
+    
+    <select id="selectRoomsById" parameterType="Long" resultMap="RoomsResult">
+        <include refid="selectRoomsVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertRooms" parameterType="Rooms" useGeneratedKeys="true" keyProperty="id">
+        insert into rooms
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="roomNumber != null and roomNumber != ''">room_number,</if>
+            <if test="roomTypeId != null">room_type_id,</if>
+            <if test="status != null">status,</if>
+            <if test="createdTime != null">created_time,</if>
+            <if test="updatedTime != null">updated_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="roomNumber != null and roomNumber != ''">#{roomNumber},</if>
+            <if test="roomTypeId != null">#{roomTypeId},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createdTime != null">#{createdTime},</if>
+            <if test="updatedTime != null">#{updatedTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateRooms" parameterType="Rooms">
+        update rooms
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="roomNumber != null and roomNumber != ''">room_number = #{roomNumber},</if>
+            <if test="roomTypeId != null">room_type_id = #{roomTypeId},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="createdTime != null">created_time = #{createdTime},</if>
+            <if test="updatedTime != null">updated_time = #{updatedTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteRoomsById" parameterType="Long">
+        delete from rooms where id = #{id}
+    </delete>
+
+    <delete id="deleteRoomsByIds" parameterType="String">
+        delete from rooms where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
