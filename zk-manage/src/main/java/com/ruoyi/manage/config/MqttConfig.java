@@ -135,7 +135,7 @@ public class MqttConfig {
             
             @Override
             public void messageArrived(String topic, MqttMessage message) throws Exception {
-                // 消息处理逻辑
+                // 消息处理逻辑，先判断是不是系统主题
                 //System.out.println(topic);
                 if(topic.startsWith("$SYS")){
                     //System.out.println("设备上下线消息：" + topic);
@@ -154,7 +154,7 @@ public class MqttConfig {
                             if(connectStatus.equals(StatusConstants.CONNECTED)){
                                 //为每个房间号创建消息队列
                                 Map<String, Object> args = new HashMap<>();
-                                args.put("x-message-ttl", 2000); // 队列级别 TTL 2秒过期
+                                args.put("x-message-ttl", 5000); // 队列级别 TTL 5秒过期
                                 rabbitAdmin.declareQueue(new Queue(
                                         "smc.device."+roomNumber,
                                         true,
@@ -178,10 +178,9 @@ public class MqttConfig {
                     }
                 }
                 else {
-                    //分割主题，提取房间号
+                    //不是系统主题，则分割主题，提取房间号
                     String roomNumber = topic.split("/")[1];
                     //System.out.println("接收到消息，房间号：" + roomNumber);
-                    
                     //获取消息体
                     String payload = new String(message.getPayload());
                     JSONObject payloadJson = JSONObject.parseObject(payload);
@@ -192,12 +191,15 @@ public class MqttConfig {
                             .timeStamp(LocalDateTime.now())
                             .build();
                     //System.out.println(sensorData);
-                    
+                    // 添加时间戳
+                    payloadJson.put("time", LocalDateTime.now());
+                    System.out.println(payloadJson);
+                    //System.out.println("消息体"+payload);
                     //按房间号写入mongodb
                     mongoTemplate.save(sensorData, roomNumber);
-                    
                     // TODO: 处理接收到的消息，按房间号投递到对应的消息队列
                     try {
+                        payload = payloadJson.toJSONString();
                         rabbitTemplate.convertAndSend(mqttDirectExchange.getName(),
                                 roomNumber+".rev",
                                 payload);
